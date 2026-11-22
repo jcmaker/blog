@@ -1,0 +1,6 @@
+{
+	// 글(.md)에 이미지를 붙여넣거나 끌어다 놓으면 글 옆 images/글-이름/ 폴더에 저장한다
+	"markdown.copyFiles.destination": {
+		"src/content/blog/**/*": "./images/${documentBaseName}/"
+	}
+}
