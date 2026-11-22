@@ -1,0 +1,715 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+---
+
+<!-- 글쓰기 화면. 서버 없이 브라우저에서 GitHub API로 저장소의 글 파일을 읽고 쓴다.
+     화면은 셋이고 한 번에 하나만 보인다: 로그인(#login) → 글 목록(#list) → 편집(#editor). 동작은 아래 script에 있다. -->
+<!doctype html>
+<html lang="ko">
+	<head>
+		<BaseHead title="글쓰기" description="블로그 글쓰기 화면" />
+		<meta name="robots" content="noindex" />
+	</head>
+	<body class="admin">
+		<section id="login" class="login" hidden>
+			<form id="loginForm" class="card">
+				<h1>글쓰기</h1>
+				<p>GitHub 토큰으로 로그인합니다. 토큰은 이 브라우저에만 저장되고 GitHub으로만 전송됩니다.</p>
+				<div class="field">
+					<label for="token">GitHub 토큰</label>
+					<input id="token" type="password" autocomplete="off" spellcheck="false" required />
+					<small>fine-grained token · jcmaker/blog 저장소 · Contents 읽기/쓰기 권한</small>
+				</div>
+				<button class="btn primary" type="submit">로그인</button>
+			</form>
+		</section>
+
+		<section id="list" hidden>
+			<header class="ed-top">
+				<strong>글쓰기</strong>
+				<ThemeToggle />
+				<button class="btn" type="button" id="logoutBtn">로그아웃</button>
+				<button class="btn primary" type="button" id="newBtn">새 글</button>
+			</header>
+			<div class="list-in">
+				<p class="label" id="listLabel">글을 불러오는 중…</p>
+				<ul class="rows" id="rows"></ul>
+			</div>
+		</section>
+
+		<section id="editor" class="editor" hidden>
+			<header class="ed-top">
+				<button class="btn" type="button" id="backBtn" aria-label="글 목록으로">←</button>
+				<strong id="edTitle"></strong>
+				<ThemeToggle />
+				<button class="btn primary" type="button" id="saveBtn">발행</button>
+			</header>
+			<div class="ed-tabs" role="group" aria-label="보기">
+				<button type="button" data-pane="write" aria-pressed="true">작성</button>
+				<button type="button" data-pane="view" aria-pressed="false">미리보기</button>
+			</div>
+			<div class="panes" id="panes" data-pane="write">
+				<form class="pane form" id="form">
+					<div class="field">
+						<label for="fTitle">제목</label>
+						<input id="fTitle" required />
+					</div>
+					<div class="field">
+						<label for="fSlug">주소</label>
+						<input id="fSlug" spellcheck="false" required pattern="[a-z0-9-]+" title="영문 소문자, 숫자, 하이픈(-)만" />
+						<small id="slugHint"></small>
+					</div>
+					<div class="field">
+						<label for="fDesc">요약</label>
+						<input id="fDesc" required />
+					</div>
+					<div class="pair">
+						<div class="field">
+							<label for="fDate">발행일</label>
+							<input id="fDate" type="date" required />
+						</div>
+						<div class="field">
+							<label for="fCat">카테고리</label>
+							<input id="fCat" spellcheck="false" required pattern="[a-z0-9-]+" title="영문 소문자, 숫자, 하이픈(-)만" />
+						</div>
+					</div>
+					<div class="field">
+						<label for="fTags">태그</label>
+						<input id="fTags" placeholder="쉼표로 구분: astro, cloudflare" />
+					</div>
+					<label class="switch">
+						<span>초안 (켜면 블로그에 안 보임)</span>
+						<input id="fDraft" type="checkbox" />
+					</label>
+					<div class="field">
+						<label for="fBody">본문</label>
+						<textarea id="fBody" spellcheck="false"></textarea>
+					</div>
+					<label class="drop" id="drop">
+						이미지를 여기로 끌어다 놓거나 눌러서 고르세요. 저장할 때 이 글의 폴더에 올라갑니다.
+						<input id="fImages" type="file" accept="image/*" multiple hidden />
+					</label>
+				</form>
+				<div class="pane view">
+					<p class="view-label">미리보기 · 입력하는 대로 바뀝니다</p>
+					<div class="sheet">
+						<span class="cat" id="pvCat"></span>
+						<h1 id="pvTitle"></h1>
+						<p class="when" id="pvMeta"></p>
+						<div class="prose" id="pvBody"></div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div class="toast" id="toast" role="status"></div>
+	</body>
+</html>
+
+<script>
+	import { marked } from 'marked';
+	import { parsePost, serializePost } from '../frontmatter';
+
+	const REPO = 'jcmaker/blog';
+	const BRANCH = 'main';
+	const DIR = 'src/content/blog';
+	const API = `https://api.github.com/repos/${REPO}`;
+	const RAW = `https://raw.githubusercontent.com/${REPO}/${BRANCH}/${DIR}`;
+	const TOKEN_KEY = 'gh-token';
+
+	const $ = <T extends HTMLElement = HTMLInputElement>(id: string) => document.getElementById(id) as T;
+	const esc = (text: string) => text.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
+
+	let token = '';
+	try {
+		token = localStorage.getItem(TOKEN_KEY) ?? '';
+	} catch {
+		// 저장이 막힌 브라우저에서는 열 때마다 로그인한다.
+	}
+
+	// 지금 편집 중인 글. slug가 null이면 아직 저장소에 없는 새 글이다.
+	let current: { slug: string | null; sha?: string; data: Record<string, unknown> } = { slug: null, data: {} };
+	// 아직 올리지 않은 이미지: 파일 이름 → 파일, 미리보기 주소
+	const pending = new Map<string, { file: File; url: string }>();
+	let dirty = false;
+
+	// ── GitHub ──
+	async function gh(path: string, init?: RequestInit) {
+		const res = await fetch(API + path, {
+			...init,
+			cache: 'no-store',
+			headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
+		});
+		if (res.status === 404 && (!init || init.method === 'GET')) return null;
+		if (res.status === 401) throw new Error('토큰이 올바르지 않거나 만료됐습니다.');
+		if (res.status === 403) throw new Error('이 토큰에는 저장소에 쓸 권한이 없습니다.');
+		if (res.status === 409 || res.status === 422) throw new Error('저장소의 글이 그사이 바뀌었습니다. 내용을 복사해 두고 글을 다시 열어 주세요.');
+		if (!res.ok) throw new Error(`GitHub 오류 (${res.status})`);
+		return res.json();
+	}
+	const toBase64 = (bytes: Uint8Array) => {
+		let binary = '';
+		for (const byte of bytes) binary += String.fromCharCode(byte);
+		return btoa(binary);
+	};
+	const fromBase64 = (base64: string) => new TextDecoder().decode(Uint8Array.from(atob(base64.replace(/\s/g, '')), (ch) => ch.charCodeAt(0)));
+	const getFile = (path: string) => gh(`/contents/${DIR}/${path}?ref=${BRANCH}`);
+	const putFile = (path: string, bytes: Uint8Array, message: string, sha?: string) =>
+		gh(`/contents/${DIR}/${path}`, { method: 'PUT', body: JSON.stringify({ message, content: toBase64(bytes), branch: BRANCH, sha }) });
+
+	// ── 화면 전환 ──
+	function show(view: 'login' | 'list' | 'editor') {
+		for (const id of ['login', 'list', 'editor']) $<HTMLElement>(id).hidden = id !== view;
+	}
+	let toastTimer: number;
+	function toast(message: string) {
+		const el = $<HTMLElement>('toast');
+		el.textContent = message;
+		el.classList.add('on');
+		clearTimeout(toastTimer);
+		toastTimer = window.setTimeout(() => el.classList.remove('on'), 4000);
+	}
+
+	// ── 로그인 ──
+	$('loginForm').addEventListener('submit', async (event) => {
+		event.preventDefault();
+		token = $('token').value.trim();
+		try {
+			const repo = await gh('');
+			if (!repo?.permissions?.push) throw new Error('이 토큰에는 저장소에 쓸 권한이 없습니다.');
+			try {
+				localStorage.setItem(TOKEN_KEY, token);
+			} catch {
+				// 저장 실패는 무시: 이번 화면에서는 그대로 쓸 수 있다.
+			}
+			$('token').value = '';
+			await loadList();
+		} catch (error) {
+			token = '';
+			toast((error as Error).message);
+		}
+	});
+	$('logoutBtn').addEventListener('click', () => {
+		token = '';
+		try {
+			localStorage.removeItem(TOKEN_KEY);
+		} catch {
+			// 지울 것이 없다.
+		}
+		show('login');
+	});
+
+	// ── 글 목록 ──
+	async function loadList() {
+		show('list');
+		$('listLabel').textContent = '글을 불러오는 중…';
+		$('rows').innerHTML = '';
+		const entries = ((await gh(`/contents/${DIR}?ref=${BRANCH}`)) ?? []) as { name: string; type: string }[];
+		// ponytail: 글마다 요청을 하나씩 보낸다. 글이 수십 개를 넘어 느려지면 Git Trees API 한 번으로 바꾼다.
+		const posts = await Promise.all(
+			entries
+				.filter((entry) => entry.type === 'dir')
+				.map(async (entry) => {
+					const file = await getFile(`${entry.name}/index.md`);
+					return file ? { slug: entry.name, data: parsePost(fromBase64(file.content)).data } : null;
+				}),
+		);
+		const rows = posts.filter((post) => post !== null).sort((a, b) => String(b.data.pubDate).localeCompare(String(a.data.pubDate)));
+		$('listLabel').textContent = `글 ${rows.length}개`;
+		$('rows').innerHTML = rows
+			.map(
+				(post) => `<li><button type="button" data-open="${esc(post.slug)}">
+					<strong>${esc(String(post.data.title ?? post.slug))}</strong>
+					<span>${esc(String(post.data.pubDate ?? ''))} · ${esc(String(post.data.category ?? 'tech'))} · /${esc(post.slug)}/${post.data.draft ? ' <i class="badge">초안</i>' : ''}</span>
+				</button></li>`,
+			)
+			.join('');
+	}
+	$('rows').addEventListener('click', (event) => {
+		const button = (event.target as Element).closest<HTMLElement>('[data-open]');
+		if (button) openPost(button.dataset.open!).catch((error) => toast(error.message));
+	});
+	$('newBtn').addEventListener('click', () => fill({ slug: null, data: {} }, ''));
+	$('backBtn').addEventListener('click', () => {
+		if (dirty && !confirm('저장하지 않은 내용이 있습니다. 목록으로 나갈까요?')) return;
+		dirty = false;
+		loadList().catch((error) => toast(error.message));
+	});
+
+	// ── 편집 ──
+	async function openPost(slug: string) {
+		const file = await getFile(`${slug}/index.md`);
+		if (!file) throw new Error('글 파일을 찾지 못했습니다.');
+		const post = parsePost(fromBase64(file.content));
+		fill({ slug, sha: file.sha, data: post.data }, post.body);
+	}
+	function fill(post: typeof current, body: string) {
+		current = post;
+		for (const image of pending.values()) URL.revokeObjectURL(image.url);
+		pending.clear();
+		const { data } = post;
+		const today = new Date();
+		$('fTitle').value = String(data.title ?? '');
+		$('fSlug').value = post.slug ?? '';
+		$('fSlug').readOnly = post.slug !== null; // 주소를 바꾸면 폴더를 옮겨야 해서, 저장된 글은 잠근다
+		$('fDesc').value = String(data.description ?? '');
+		$('fDate').value = String(data.pubDate ?? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`).slice(0, 10);
+		$('fCat').value = String(data.category ?? 'tech');
+		$('fTags').value = Array.isArray(data.tags) ? data.tags.join(', ') : '';
+		$('fDraft').checked = post.slug === null ? true : data.draft === true;
+		$('fBody').value = body;
+		dirty = false;
+		show('editor');
+		sync();
+	}
+	function sync() {
+		const title = $('fTitle').value || '제목 없음';
+		const slug = $('fSlug').value || current.slug || '';
+		$('edTitle').textContent = title;
+		$('pvTitle').textContent = title;
+		$('pvCat').textContent = $('fCat').value || 'tech';
+		$('pvMeta').textContent = ($('fDate').value || '날짜 없음').replaceAll('-', '. ') + ($('fDraft').checked ? ' · 초안' : '');
+		$('slugHint').textContent = `blog.justincho.dev/blog/${slug || '…'}/`;
+		$('saveBtn').textContent = $('fDraft').checked ? '초안으로 저장' : '발행';
+		$('pvBody').innerHTML = marked.parse($('fBody').value, { async: false });
+		// 같은 폴더의 이미지(./그림.png)는 아직 올리지 않은 파일이거나 저장소에 있는 파일이다.
+		for (const img of $('pvBody').querySelectorAll('img')) {
+			const src = img.getAttribute('src') ?? '';
+			if (/^(https?:|data:|\/)/.test(src)) continue;
+			const file = decodeURIComponent(src.replace(/^\.\//, ''));
+			img.src = pending.get(file)?.url ?? `${RAW}/${slug}/${file}`;
+		}
+	}
+	$('form').addEventListener('input', () => {
+		dirty = true;
+		sync();
+	});
+	addEventListener('beforeunload', (event) => {
+		if (dirty) event.preventDefault();
+	});
+	for (const tab of document.querySelectorAll<HTMLElement>('.ed-tabs [data-pane]')) {
+		tab.addEventListener('click', () => {
+			$('panes').dataset.pane = tab.dataset.pane;
+			for (const other of document.querySelectorAll('.ed-tabs button')) other.setAttribute('aria-pressed', String(other === tab));
+		});
+	}
+
+	// ── 이미지 ──
+	function addImages(files: Iterable<File>) {
+		const body = $<HTMLTextAreaElement>('fBody');
+		for (const file of files) {
+			if (!file.type.startsWith('image/')) continue;
+			const name = file.name.toLowerCase().replace(/[^a-z0-9.\-_]+/g, '-');
+			pending.set(name, { file, url: URL.createObjectURL(file) });
+			body.setRangeText(`\n![](./${name})\n`, body.selectionStart, body.selectionEnd, 'end');
+		}
+		dirty = true;
+		sync();
+	}
+	$('fImages').addEventListener('change', () => {
+		addImages($('fImages').files ?? []);
+		$('fImages').value = '';
+	});
+	for (const target of [$('drop'), $('fBody')]) {
+		target.addEventListener('dragover', (event) => event.preventDefault());
+		target.addEventListener('drop', (event) => {
+			event.preventDefault();
+			addImages(event.dataTransfer?.files ?? []);
+		});
+	}
+
+	// ── 저장 ──
+	$('saveBtn').addEventListener('click', async () => {
+		if (!$<HTMLFormElement>('form').reportValidity()) return;
+		const slug = $('fSlug').value;
+		const tags = $('fTags')
+			.value.split(',')
+			.map((tag) => tag.trim())
+			.filter(Boolean);
+		const data: Record<string, unknown> = {
+			...current.data,
+			title: $('fTitle').value,
+			description: $('fDesc').value,
+			pubDate: $('fDate').value,
+			category: $('fCat').value,
+			tags,
+			draft: $('fDraft').checked,
+		};
+		if (tags.length === 0) delete data.tags;
+		if (!data.draft) delete data.draft;
+
+		const button = $<HTMLButtonElement>('saveBtn');
+		button.disabled = true;
+		try {
+			if (current.slug === null && (await getFile(`${slug}/index.md`))) throw new Error('이미 있는 주소입니다. 다른 주소를 적어 주세요.');
+			// ponytail: 파일마다 커밋이 하나씩 생기고 그때마다 배포가 돈다. 이미지가 많아 거슬리면 Git Data API로 한 커밋에 묶는다.
+			for (const [name, image] of pending) {
+				const existing = await getFile(`${slug}/${name}`);
+				await putFile(`${slug}/${name}`, new Uint8Array(await image.file.arrayBuffer()), `이미지: ${slug}/${name}`, existing?.sha);
+				pending.delete(name);
+			}
+			const text = serializePost({ data, body: $('fBody').value });
+			const saved = await putFile(`${slug}/index.md`, new TextEncoder().encode(text), `${current.slug === null ? '새 글' : '글 수정'}: ${data.title}`, current.sha);
+			current = { slug, sha: saved.content.sha, data };
+			$('fSlug').readOnly = true;
+			dirty = false;
+			toast(data.draft ? '초안으로 저장했어요' : '발행했어요. 1~2분 뒤 블로그에 보입니다');
+		} catch (error) {
+			toast((error as Error).message);
+		} finally {
+			button.disabled = false;
+		}
+	});
+
+	// ── 시작 ──
+	if (token) loadList().catch((error) => { toast(error.message); show('login'); });
+	else show('login');
+</script>
+
+<style is:global>
+	/* 글쓰기 화면 전용. ERP 회의록 편집기처럼 연한 바탕 위에 종이가 놓인다. 좁은 화면은 작성/미리보기 탭, 720px부터 좌우 분할. */
+	.admin [hidden] {
+		display: none !important;
+	}
+	.admin button,
+	.admin input,
+	.admin textarea {
+		font: inherit;
+		color: inherit;
+	}
+	.admin .ed-top {
+		position: sticky;
+		top: 0;
+		z-index: 3;
+		height: 56px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0 16px;
+		background: var(--background);
+		border-bottom: 1px solid var(--border);
+	}
+	.admin .ed-top strong {
+		flex: 1;
+		min-width: 0;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.admin .btn {
+		border: 1px solid var(--border);
+		background: var(--background);
+		color: var(--foreground);
+		cursor: pointer;
+		transition:
+			transform 0.15s var(--ease),
+			background 0.15s;
+	}
+	.admin .btn:hover {
+		background: var(--muted);
+	}
+	.admin .btn:active {
+		transform: scale(0.96);
+	}
+	.admin .btn.primary {
+		border-color: transparent;
+		background: var(--c1);
+		color: #fff;
+	}
+	.admin .btn:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
+	.login {
+		flex: 1;
+		display: grid;
+		place-items: center;
+		padding: 24px 16px;
+		background: color-mix(in oklab, var(--muted) 70%, var(--background));
+	}
+	.login .card {
+		width: 100%;
+		max-width: 400px;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		padding: 28px 24px;
+		background: var(--card);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+	}
+	.login h1 {
+		margin: 0;
+		font-size: 22px;
+		letter-spacing: -0.02em;
+	}
+	.login p {
+		margin: 0;
+		color: var(--muted-foreground);
+		font-size: 14px;
+	}
+	.list-in {
+		width: 100%;
+		max-width: 760px;
+		margin: 0 auto;
+		padding: 28px 16px 64px;
+	}
+	.rows {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+	.rows:empty {
+		display: none;
+	}
+	.rows li + li {
+		border-top: 1px solid var(--border);
+	}
+	.rows button {
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 14px 16px;
+		border: 0;
+		background: none;
+		text-align: left;
+		cursor: pointer;
+	}
+	.rows button:hover {
+		background: var(--muted);
+	}
+	.rows strong {
+		font-weight: 600;
+	}
+	.rows span {
+		font-size: 13px;
+		color: var(--muted-foreground);
+	}
+	.rows .badge {
+		font-style: normal;
+	}
+	.editor:not([hidden]) {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+	.ed-tabs {
+		display: flex;
+		gap: 4px;
+		padding: 8px 16px;
+		border-bottom: 1px solid var(--border);
+	}
+	.ed-tabs button {
+		flex: 1;
+		border: 0;
+		background: none;
+		padding: 7px;
+		border-radius: 6px;
+		color: var(--muted-foreground);
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.ed-tabs button[aria-pressed='true'] {
+		background: var(--muted);
+		color: var(--foreground);
+	}
+	.panes {
+		flex: 1;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.pane {
+		min-width: 0;
+		padding: 18px 16px 40px;
+	}
+	.panes[data-pane='write'] .pane.view,
+	.panes[data-pane='view'] .pane.form {
+		display: none;
+	}
+	.pane.form {
+		display: flex;
+		flex-direction: column;
+		gap: 14px;
+	}
+	.field {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.field label,
+	.switch span {
+		font-size: 13.5px;
+		font-weight: 500;
+	}
+	.field small {
+		color: var(--muted-foreground);
+		font-size: 12px;
+		overflow-wrap: anywhere;
+	}
+	.field input,
+	.field textarea {
+		width: 100%;
+		border: 1px solid var(--input);
+		background: var(--background);
+		border-radius: var(--radius);
+		padding: 8px 12px;
+		font-size: 15px;
+		transition:
+			border-color 0.15s,
+			box-shadow 0.15s;
+	}
+	.field input:focus,
+	.field textarea:focus {
+		outline: 0;
+		border-color: var(--primary-text);
+		box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary-text) 22%, transparent);
+	}
+	.field input:read-only {
+		background: var(--muted);
+		color: var(--muted-foreground);
+	}
+	.field textarea {
+		min-height: 420px;
+		resize: vertical;
+		font-family: var(--font-jetbrains-mono);
+		font-size: 13.5px;
+		line-height: 1.7;
+	}
+	.pair {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+		gap: 12px;
+	}
+	.switch {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius);
+		padding: 10px 12px;
+		cursor: pointer;
+	}
+	.switch input {
+		appearance: none;
+		flex: none;
+		position: relative;
+		width: 40px;
+		height: 24px;
+		margin: 0;
+		border-radius: 999px;
+		background: var(--input);
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+	.switch input::after {
+		content: '';
+		position: absolute;
+		top: 3px;
+		left: 3px;
+		width: 18px;
+		height: 18px;
+		border-radius: 50%;
+		background: #fff;
+		transition: transform 0.25s var(--ease);
+	}
+	.switch input:checked {
+		background: var(--c1);
+	}
+	.switch input:checked::after {
+		transform: translateX(16px);
+	}
+	.drop {
+		border: 1.5px dashed var(--input);
+		border-radius: var(--radius);
+		padding: 14px;
+		text-align: center;
+		color: var(--muted-foreground);
+		font-size: 13.5px;
+		cursor: pointer;
+	}
+	.pane.view {
+		background: color-mix(in oklab, var(--muted) 70%, var(--background));
+	}
+	.view-label {
+		margin: 0 0 10px;
+		font-size: 12.5px;
+		font-weight: 500;
+		color: var(--muted-foreground);
+	}
+	.sheet {
+		background: var(--card);
+		border: 1px solid var(--border);
+		box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 14%, transparent);
+		padding: 24px 20px 32px;
+	}
+	.sheet .cat {
+		font-size: 12.5px;
+		font-weight: 700;
+		color: var(--primary-text);
+	}
+	.sheet h1 {
+		margin: 6px 0 0;
+		font-size: 24px;
+		line-height: 1.35;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+	}
+	.sheet .when {
+		margin: 8px 0 0;
+		padding-bottom: 16px;
+		border-bottom: 1px solid var(--border);
+		font-size: 13px;
+		color: var(--muted-foreground);
+	}
+	.toast {
+		position: fixed;
+		left: 50%;
+		bottom: 24px;
+		z-index: 5;
+		max-width: calc(100% - 32px);
+		padding: 10px 16px;
+		border-radius: var(--radius);
+		background: var(--foreground);
+		color: var(--background);
+		font-size: 14px;
+		font-weight: 500;
+		text-align: center;
+		opacity: 0;
+		transform: translate(-50%, 80px);
+		transition:
+			transform 0.4s var(--ease),
+			opacity 0.3s;
+		pointer-events: none;
+	}
+	.toast.on {
+		opacity: 1;
+		transform: translate(-50%, 0);
+	}
+	@media (min-width: 720px) {
+		.ed-tabs {
+			display: none;
+		}
+		.panes {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+		.panes[data-pane] .pane.form {
+			display: flex;
+			padding: 24px 24px 48px;
+			border-right: 1px solid var(--border);
+		}
+		.panes[data-pane] .pane.view {
+			display: block;
+			padding: 24px 24px 48px;
+		}
+		.sheet {
+			padding: 40px 40px 48px;
+		}
+	}
+</style>

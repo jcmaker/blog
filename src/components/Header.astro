@@ -1,5 +1,6 @@
 ---
 import { getPosts } from '../posts';
+import ThemeToggle from './ThemeToggle.astro';
 
 interface Props {
 	active?: string;
@@ -21,6 +22,7 @@ const categories = [...new Set((await getPosts()).map((post) => post.data.catego
 				))
 			}
 			<a href="https://justincho.dev">소개</a>
+			<ThemeToggle />
 		</nav>
 	</div>
 </header>
