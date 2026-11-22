@@ -22,13 +22,41 @@ const categories = [...new Set((await getPosts()).map((post) => post.data.catego
 				))
 			}
 			<a href="https://justincho.dev">소개</a>
-			<a class="icon-link" href="/search/" aria-label="검색">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-					<circle cx="11" cy="11" r="7"></circle>
-					<path d="m20 20-3.5-3.5"></path>
-				</svg>
-			</a>
+			<!-- 돋보기를 누르면 입력란이 열리고, 입력하고 Enter를 누르면 /search/?q=… 로 간다 -->
+			<form class="hsearch" action="/search/" role="search">
+				<input name="q" type="search" placeholder="검색" aria-label="검색어" autocomplete="off" tabindex="-1" />
+				<button class="icon-link" type="submit" aria-label="검색">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+						<circle cx="11" cy="11" r="7"></circle>
+						<path d="m20 20-3.5-3.5"></path>
+					</svg>
+				</button>
+			</form>
 			<ThemeToggle />
 		</nav>
 	</div>
 </header>
+
+<script>
+	const form = document.querySelector<HTMLFormElement>('.hsearch')!;
+	const input = form.querySelector('input')!;
+	const close = () => {
+		form.classList.remove('open');
+		input.tabIndex = -1;
+	};
+	form.addEventListener('submit', (event) => {
+		if (form.classList.contains('open') && input.value.trim()) return; // 입력이 있으면 검색 페이지로 간다
+		event.preventDefault();
+		if (form.classList.toggle('open')) {
+			input.tabIndex = 0;
+			input.focus();
+		} else close();
+	});
+	input.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape') close();
+	});
+	// 아무것도 적지 않고 다른 곳을 누르면 닫는다.
+	form.addEventListener('focusout', (event) => {
+		if (!input.value && !form.contains(event.relatedTarget as Node)) close();
+	});
+</script>

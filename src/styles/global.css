@@ -118,15 +118,51 @@ img {
 	align-items: center;
 	gap: 2px;
 }
-.top nav a.icon-link {
+.hsearch {
+	display: flex;
+	align-items: center;
+}
+.hsearch input {
+	width: 0;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	background: color-mix(in oklab, var(--hero-fg) 12%, transparent);
+	color: var(--hero-fg);
+	font: inherit;
+	font-size: 14px;
+	opacity: 0;
+	transition:
+		width 0.25s var(--ease),
+		opacity 0.2s;
+}
+.hsearch input::placeholder {
+	color: var(--hero-sub);
+}
+.hsearch.open input {
+	width: 180px;
+	margin-right: 4px;
+	padding: 5px 10px;
+	opacity: 1;
+}
+.hsearch input:focus {
+	outline: 2px solid var(--sky);
+}
+.top nav .icon-link {
 	display: grid;
 	place-items: center;
 	width: 28px;
 	height: 28px;
 	padding: 0;
+	border: 0;
 	border-radius: 6px;
+	background: none;
+	color: var(--hero-sub);
+	cursor: pointer;
 }
-.top nav a.icon-link:hover {
+.top nav .icon-link:hover {
+	color: var(--hero-fg);
 	background: color-mix(in oklab, currentColor 12%, transparent);
 }
 .theme-toggle {
@@ -726,6 +762,11 @@ img {
 	color: #fff;
 }
 
+@media (max-width: 719px) {
+	.top nav:has(.hsearch.open) > a {
+		display: none;
+	}
+}
 @media (min-width: 720px) {
 	.activity {
 		--skip: 0;
