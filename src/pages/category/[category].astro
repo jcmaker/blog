@@ -1,6 +1,8 @@
 ---
+import Hero from '../../components/Hero.astro';
 import PostList from '../../components/PostList.astro';
 import { SITE_TITLE } from '../../consts';
+import Base from '../../layouts/Base.astro';
 import { getPosts } from '../../posts';
 
 export async function getStaticPaths() {
@@ -16,9 +18,11 @@ const { category } = Astro.params;
 const { posts } = Astro.props;
 ---
 
-<PostList
-	title={`${category} | ${SITE_TITLE}`}
-	description={`${category} 카테고리의 글`}
-	heading={category}
-	posts={posts}
-/>
+<Base title={`${category} | ${SITE_TITLE}`} description={`${category} 카테고리의 글`} category={category}>
+	<Hero sub={`카테고리 · 글 ${posts.length}개`}>{category}</Hero>
+	<main class="main">
+		<div class="in enter">
+			<PostList label="이 카테고리의 글" posts={posts} />
+		</div>
+	</main>
+</Base>

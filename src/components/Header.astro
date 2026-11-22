@@ -1,30 +1,26 @@
 ---
-import { SITE_TITLE } from '../consts';
+import { getPosts } from '../posts';
+
+interface Props {
+	active?: string;
+}
+
+const { active } = Astro.props;
+const categories = [...new Set((await getPosts()).map((post) => post.data.category))];
 ---
 
-<header>
-	<nav>
-		<a class="home" href="/">{SITE_TITLE}</a>
-		<a href="https://justincho.dev">소개</a>
-	</nav>
+<header class="top">
+	<div class="in">
+		<a class="logo" href="/">justin<em>.</em>log</a>
+		<nav>
+			{
+				categories.map((category) => (
+					<a href={`/category/${category}/`} aria-current={category === active ? 'page' : undefined}>
+						{category}
+					</a>
+				))
+			}
+			<a href="https://justincho.dev">소개</a>
+		</nav>
+	</div>
 </header>
-<style>
-	header {
-		padding: 0 1em;
-		background: white;
-		box-shadow: 0 2px 8px rgba(var(--black), 5%);
-	}
-	nav {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-	}
-	nav a {
-		padding: 1em 0.5em;
-		color: var(--black);
-		text-decoration: none;
-	}
-	.home {
-		font-weight: 700;
-	}
-</style>

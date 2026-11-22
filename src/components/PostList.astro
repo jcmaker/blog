@@ -1,72 +1,62 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import BaseHead from './BaseHead.astro';
-import Footer from './Footer.astro';
+import { getPosts, readingMinutes } from '../posts';
 import FormattedDate from './FormattedDate.astro';
-import Header from './Header.astro';
+import Thumb from './Thumb.astro';
 
+// 글 목록과 오른쪽 태그 모음. 홈·카테고리·태그 페이지가 함께 쓴다.
 interface Props {
-	title: string;
-	description: string;
-	heading?: string;
+	label: string;
 	posts: CollectionEntry<'blog'>[];
+	activeTag?: string;
 }
 
-const { title, description, heading, posts } = Astro.props;
+const { label, posts, activeTag } = Astro.props;
+const counts = new Map<string, number>();
+for (const post of await getPosts()) {
+	for (const tag of post.data.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+}
 ---
 
-<!doctype html>
-<html lang="ko">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			ul {
-				list-style: none;
-				margin: 0;
-				padding: 0;
-			}
-			li {
-				margin-bottom: 2rem;
-			}
-			h2 {
-				margin: 0;
-				font-size: 1.4rem;
-			}
-			h2 a {
-				color: rgb(var(--black));
-				text-decoration: none;
-			}
-			h2 a:hover {
-				color: var(--accent);
-			}
-			.meta,
-			.description {
-				margin: 0.25rem 0 0;
-				color: rgb(var(--gray));
-				font-size: 0.9rem;
-			}
-		</style>
-	</head>
-	<body>
-		<Header />
-		<main>
-			{heading && <h1>{heading}</h1>}
-			{posts.length === 0 && <p>아직 글이 없습니다.</p>}
-			<ul>
-				{posts.map((post) => (
+<div class="cols">
+	<section>
+		<p class="label">{label}</p>
+		{posts.length === 0 && <p>아직 글이 없습니다.</p>}
+		<ul class="items">
+			{
+				posts.map((post) => (
 					<li>
-						<h2>
-							<a href={`/blog/${post.id}/`}>{post.data.title}</a>
-						</h2>
-						<p class="meta">
-							<FormattedDate date={post.data.pubDate} /> ·{' '}
-							<a href={`/category/${post.data.category}/`}>{post.data.category}</a>
-						</p>
-						<p class="description">{post.data.description}</p>
+						<a class="item" href={`/blog/${post.id}/`}>
+							<Thumb post={post} />
+							<div class="tx">
+								<span class="cat">{post.data.category}</span>
+								<h3>{post.data.title}</h3>
+								<p class="desc">{post.data.description}</p>
+								<p class="meta">
+									<FormattedDate date={post.data.pubDate} />
+									<i />
+									<span>읽는 데 {readingMinutes(post)}분</span>
+									{post.data.draft && <span class="badge">초안</span>}
+								</p>
+							</div>
+						</a>
 					</li>
-				))}
-			</ul>
-		</main>
-		<Footer />
-	</body>
-</html>
+				))
+			}
+		</ul>
+	</section>
+	{
+		counts.size > 0 && (
+			<aside>
+				<p class="label">Tag</p>
+				<div class="tagbox">
+					{[...counts].map(([tag, count]) => (
+						<a class="tag" href={`/tag/${tag}/`} aria-current={tag === activeTag ? 'page' : undefined}>
+							{tag} {count}
+						</a>
+					))}
+				</div>
+			</aside>
+		)
+	}
+</div>

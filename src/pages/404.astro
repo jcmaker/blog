@@ -1,0 +1,15 @@
+---
+import { SITE_TITLE } from '../consts';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title={`찾는 글이 없습니다 | ${SITE_TITLE}`} description="주소가 바뀌었거나 아직 발행되지 않은 글입니다.">
+	<main class="nf enter">
+		<div>
+			<code>404</code>
+			<h1>찾는 글이 없습니다</h1>
+			<p>주소가 바뀌었거나 아직 발행되지 않은 글입니다.</p>
+			<a class="btn" href="/">글 목록으로</a>
+		</div>
+	</main>
+</Base>

@@ -1,21 +1,97 @@
 ---
 import { type CollectionEntry, render } from 'astro:content';
-import BlogPost from '../../layouts/BlogPost.astro';
-import { getPosts } from '../../posts';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Thumb from '../../components/Thumb.astro';
+import { SITE_TITLE } from '../../consts';
+import Base from '../../layouts/Base.astro';
+import { getPosts, readingMinutes } from '../../posts';
 
 export async function getStaticPaths() {
 	const posts = await getPosts();
-	return posts.map((post) => ({
+	// 목록이 최신순이라 앞쪽이 더 새 글이다.
+	return posts.map((post, i) => ({
 		params: { slug: post.id },
-		props: post,
+		props: { post, newer: posts[i - 1], older: posts[i + 1] },
 	}));
 }
-type Props = CollectionEntry<'blog'>;
+type Post = CollectionEntry<'blog'>;
+type Props = { post: Post; newer?: Post; older?: Post };
 
-const post = Astro.props;
-const { Content } = await render(post);
+const { post, newer, older } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, category, tags } = post.data;
+const { Content, headings } = await render(post);
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 ---
 
-<BlogPost {...post.data}>
-	<Content />
-</BlogPost>
+<Base title={`${title} | ${SITE_TITLE}`} description={description} image={heroImage} category={category}>
+	<section class="hero ph">
+		<Thumb post={post} class="art" />
+		<div class="in">
+			<a class="cat" href={`/category/${category}/`}>{category}</a>
+			<h1>{title}</h1>
+			<p class="when">
+				<FormattedDate date={pubDate} /> · 읽는 데 {readingMinutes(post)}분
+				{updatedDate && <> · 수정 <FormattedDate date={updatedDate} /></>}
+			</p>
+		</div>
+	</section>
+	<main class="main">
+		<div class="in read enter">
+			<article>
+				<div class="summary">요약: {description}</div>
+				<div class="prose"><Content /></div>
+				<div class="tags-end">
+					{tags.map((tag) => <a class="tag" href={`/tag/${tag}/`}>#{tag}</a>)}
+				</div>
+				{
+					(older || newer) && (
+						<nav class="around" aria-label="이전·다음 글">
+							{older && (
+								<a href={`/blog/${older.id}/`}>
+									<small>‹ 이전 글</small>
+									<strong>{older.data.title}</strong>
+								</a>
+							)}
+							{newer && (
+								<a href={`/blog/${newer.id}/`}>
+									<small>다음 글 ›</small>
+									<strong>{newer.data.title}</strong>
+								</a>
+							)}
+						</nav>
+					)
+				}
+			</article>
+			{
+				toc.length > 0 && (
+					<aside class="toc">
+						<nav aria-label="이 글의 목차">
+							{toc.map((heading) => (
+								<a class:list={{ sub: heading.depth === 3 }} href={`#${heading.slug}`}>
+									{heading.text}
+								</a>
+							))}
+						</nav>
+					</aside>
+				)
+			}
+		</div>
+	</main>
+</Base>
+
+<script>
+	// 지금 읽는 제목을 목차에 표시한다.
+	const links = [...document.querySelectorAll<HTMLAnchorElement>('.toc a')];
+	const heads = links.map((link) => document.getElementById(decodeURIComponent(link.hash.slice(1))));
+	const spy = () => {
+		let current = 0;
+		heads.forEach((head, i) => {
+			if (head && head.getBoundingClientRect().top < 140) current = i;
+		});
+		links.forEach((link, i) => link.toggleAttribute('aria-current', i === current));
+	};
+	if (links.length) {
+		addEventListener('scroll', spy, { passive: true });
+		spy();
+	}
+</script>

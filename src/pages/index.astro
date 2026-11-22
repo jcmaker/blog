@@ -1,9 +1,43 @@
 ---
+import FormattedDate from '../components/FormattedDate.astro';
+import Hero from '../components/Hero.astro';
 import PostList from '../components/PostList.astro';
+import Thumb from '../components/Thumb.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import Base from '../layouts/Base.astro';
 import { getPosts } from '../posts';
 
 const posts = await getPosts();
+// 글이 세 개가 되기 전에는 같은 글이 위아래로 겹쳐 보이므로 "최근 올라온 글"을 숨긴다.
+const recent = posts.length >= 3 ? posts.slice(0, 3) : [];
 ---
 
-<PostList title={SITE_TITLE} description={SITE_DESCRIPTION} posts={posts} />
+<Base title={SITE_TITLE} description={SITE_DESCRIPTION}>
+	<Hero sub="Justin Cho의 개발 기록. 지금은 기술 글이 대부분입니다.">만들면서 배운 것을<br />기록합니다.</Hero>
+	<main class="main">
+		<div class="in enter">
+			{
+				recent.length > 0 && (
+					<section>
+						<p class="label">최근 올라온 글</p>
+						<div class="recent">
+							{recent.map((post) => (
+								<a class="cardp" href={`/blog/${post.id}/`}>
+									<Thumb post={post} />
+									<h3>{post.data.title}</h3>
+									<p class="meta">
+										<FormattedDate date={post.data.pubDate} />
+										<i />
+										<span>{post.data.category}</span>
+										{post.data.draft && <span class="badge">초안</span>}
+									</p>
+								</a>
+							))}
+						</div>
+					</section>
+				)
+			}
+			<PostList label="전체 게시글" posts={posts} />
+		</div>
+	</main>
+</Base>

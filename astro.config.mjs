@@ -10,26 +10,19 @@ export default defineConfig({
 	integrations: [mdx(), sitemap()],
 	fonts: [
 		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
+			provider: fontProviders.fontsource(),
+			name: 'Inter',
+			cssVariable: '--font-inter',
+			weights: [400, 500, 600, 700, 800],
+			// Inter에는 한글이 없어서 한글은 기기 기본 글꼴로 나온다.
+			fallbacks: ['Apple SD Gothic Neo', 'Malgun Gothic', 'system-ui', 'sans-serif'],
+		},
+		{
+			provider: fontProviders.fontsource(),
+			name: 'JetBrains Mono',
+			cssVariable: '--font-jetbrains-mono',
+			weights: [400, 600],
+			fallbacks: ['ui-monospace', 'Menlo', 'monospace'],
 		},
 	],
 });
