@@ -14,6 +14,10 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			// URL에 그대로 쓰이므로 영문 소문자로 적는다 (예: tech, life)
+			category: z.string().regex(/^[a-z0-9-]+$/).default('tech'),
+			tags: z.array(z.string()).default([]),
+			draft: z.boolean().default(false),
 		}),
 });
 

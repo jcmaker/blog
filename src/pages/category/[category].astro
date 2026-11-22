@@ -1,0 +1,24 @@
+---
+import PostList from '../../components/PostList.astro';
+import { SITE_TITLE } from '../../consts';
+import { getPosts } from '../../posts';
+
+export async function getStaticPaths() {
+	const posts = await getPosts();
+	const categories = [...new Set(posts.map((post) => post.data.category))];
+	return categories.map((category) => ({
+		params: { category },
+		props: { posts: posts.filter((post) => post.data.category === category) },
+	}));
+}
+
+const { category } = Astro.params;
+const { posts } = Astro.props;
+---
+
+<PostList
+	title={`${category} | ${SITE_TITLE}`}
+	description={`${category} 카테고리의 글`}
+	heading={category}
+	posts={posts}
+/>
