@@ -36,6 +36,7 @@ for (const post of await getPosts()) {
 									<FormattedDate date={post.data.pubDate} />
 									<i />
 									<span>읽는 데 {readingMinutes(post)}분</span>
+									<span class="views" data-views={post.id} hidden />
 									{post.data.draft && <span class="badge">초안</span>}
 								</p>
 							</div>

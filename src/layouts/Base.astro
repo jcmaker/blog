@@ -26,3 +26,28 @@ const { title, description, image, category } = Astro.props;
 		<Footer />
 	</body>
 </html>
+
+<script>
+	// 조회수: [data-views="글주소"] 자리를 채운다. 글 화면(data-count)에서는 탭을 닫기 전까지 한 번만 올린다.
+	// /api/views가 없는 환경(로컬 개발 서버)에서는 자리가 숨겨진 채로 남는다.
+	const spots = [...document.querySelectorAll<HTMLElement>('[data-views]')];
+	const own = spots.find((spot) => 'count' in spot.dataset);
+	if (spots.length) {
+		try {
+			const key = `viewed:${own?.dataset.views}`;
+			if (own && !sessionStorage.getItem(key)) {
+				const res = await fetch(`/api/views?slug=${encodeURIComponent(own.dataset.views!)}`, { method: 'POST' });
+				if (res.ok) sessionStorage.setItem(key, '1');
+			}
+			const counts: Record<string, number> = await fetch('/api/views').then((res) => (res.ok ? res.json() : {}));
+			for (const spot of spots) {
+				const count = counts[spot.dataset.views!];
+				if (count === undefined) continue;
+				spot.textContent = `${spot.dataset.prefix ?? ''}조회 ${count.toLocaleString('ko-KR')}`;
+				spot.hidden = false;
+			}
+		} catch {
+			// 조회수를 못 불러와도 글은 그대로 읽을 수 있다.
+		}
+	}
+</script>

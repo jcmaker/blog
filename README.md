@@ -30,8 +30,14 @@ draft: true           # 선택. true면 배포본에서 숨겨지고 개발 서�
 
 VS Code나 Cursor에서 이미지를 붙여넣으면 글과 같은 폴더에 저장된다. 컴포넌트를 넣어야 하는 글만 `.mdx`로 쓴다.
 
+## 검색, 조회수, 활동 기록
+
+- 검색(`/search/`): 빌드할 때 `search.json`을 만들고 브라우저에서 거른다.
+- 조회수: `functions/api/views.js`(Cloudflare Pages Function)가 D1 데이터베이스 `justinit-blog`에 센다. Pages 프로젝트 설정의 Bindings에 변수 이름 `DB`로 연결되어 있다. 로컬 개발 서버에서는 표시되지 않는다.
+- 활동 기록(홈의 점 365개): 빌드할 때 `src/content/blog`를 건드린 커밋을 git 기록에서 날짜별로 센다.
+
 ## 명령
 
 - `npm run dev` 개발 서버
 - `npm run build` `dist/`에 빌드
-- `npm test` 글머리 읽기·쓰기 검사
+- `npm test` 글머리 읽기·쓰기, 조회수 세기 검사

@@ -1,0 +1,64 @@
+---
+import { execSync } from 'node:child_process';
+import { getPosts } from '../posts';
+
+// 지난 1년의 블로그 활동을 하루 한 점으로 그린다(53주 × 7일, 맨 오른쪽 줄이 이번 주).
+// 활동 = 글 폴더(src/content/blog)를 건드린 커밋 수. 빌드할 때 git 기록에서 센다.
+const WEEKS = 53;
+const DAY = 86_400_000;
+const KST = 9 * 3_600_000;
+const dayKey = (date: Date) => date.toISOString().slice(0, 10);
+
+// 날짜는 한국 시간 기준으로 계산한다.
+const today = new Date(Date.now() + KST);
+today.setUTCHours(0, 0, 0, 0);
+const start = new Date(today.getTime() - ((WEEKS - 1) * 7 + today.getUTCDay()) * DAY); // 첫 줄의 일요일
+
+const counts = new Map<string, number>();
+try {
+	const log = execSync('git log --since="55 weeks ago" --date=format-local:%Y-%m-%d --format=%ad -- src/content/blog', {
+		env: { ...process.env, TZ: 'Asia/Seoul' },
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'ignore'],
+	});
+	for (const day of log.split('\n').filter(Boolean)) counts.set(day, (counts.get(day) ?? 0) + 1);
+} catch {
+	// git 기록을 못 읽는 환경에서는 아래의 발행일만으로 그린다.
+}
+// git 기록이 얕게 받아진 빌드에서도 글을 낸 날은 빠지지 않게 한다.
+for (const post of await getPosts()) {
+	for (const date of [post.data.pubDate, post.data.updatedDate]) {
+		if (date && !counts.has(dayKey(date))) counts.set(dayKey(date), 1);
+	}
+}
+
+const days = Array.from({ length: WEEKS * 7 }, (_, i) => {
+	const date = new Date(start.getTime() + i * DAY);
+	const count = counts.get(dayKey(date)) ?? 0;
+	return { date, count, future: date > today, level: Math.min(count, 4) };
+});
+const activeDays = days.filter((day) => day.count > 0).length;
+// 달이 바뀌는 주 위에 달 이름을 적는다.
+const months = Array.from({ length: WEEKS }, (_, week) => {
+	const month = days[week * 7].date.getUTCMonth();
+	return week > 0 && month !== days[(week - 1) * 7].date.getUTCMonth() ? { week: week + 1, label: `${month + 1}월` } : null;
+}).filter((month) => month !== null);
+---
+
+<section class="activity">
+	<p class="label">지난 1년의 기록 · {activeDays}일</p>
+	<div class="months" aria-hidden="true">
+		{months.map((month) => <span class:list={{ early: month.week <= 26 }} style={`--w:${month.week}`}>{month.label}</span>)}
+	</div>
+	<div class="dots" role="img" aria-label={`지난 1년 동안 ${activeDays}일에 글을 쓰거나 고쳤습니다.`}>
+		{
+			days.map((day) => (
+				<i
+					class:list={[`l${day.level}`, { future: day.future }]}
+					title={day.future ? undefined : `${dayKey(day.date).replaceAll('-', '. ')} · ${day.count}회`}
+				/>
+			))
+		}
+	</div>
+	<p class="legend" aria-hidden="true">적음 <i class="l0"></i><i class="l1"></i><i class="l2"></i><i class="l3"></i><i class="l4"></i> 많음</p>
+</section>

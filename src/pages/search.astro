@@ -1,0 +1,59 @@
+---
+import Hero from '../components/Hero.astro';
+import { SITE_TITLE } from '../consts';
+import Base from '../layouts/Base.astro';
+---
+
+<Base title={`검색 | ${SITE_TITLE}`} description="블로그 글 검색">
+	<Hero sub="제목, 요약, 태그, 본문에서 찾습니다.">검색</Hero>
+	<main class="main">
+		<div class="in search">
+			<input id="q" type="search" placeholder="찾을 말을 입력하세요" aria-label="검색어" autocomplete="off" autofocus />
+			<p class="label" id="count" role="status"></p>
+			<ul class="items" id="results"></ul>
+		</div>
+	</main>
+</Base>
+
+<script>
+	// ponytail: 글 전체를 한 번에 받아 브라우저에서 거른다. 글이 수백 개가 되어 search.json이 무거워지면 Pagefind로 바꾼다.
+	type Row = { slug: string; title: string; description: string; category: string; tags: string[]; date: string; text: string };
+
+	const input = document.getElementById('q') as HTMLInputElement;
+	const count = document.getElementById('count')!;
+	const results = document.getElementById('results')!;
+	const esc = (text: string) => text.replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[ch]!);
+
+	const rows: Row[] = await fetch('/search.json').then((res) => res.json());
+
+	function render() {
+		const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+		history.replaceState(null, '', terms.length ? `?q=${encodeURIComponent(input.value.trim())}` : location.pathname);
+		if (terms.length === 0) {
+			count.textContent = '';
+			results.innerHTML = '';
+			return;
+		}
+		// 모든 낱말이 들어 있는 글만 남긴다.
+		const found = rows.filter((row) => {
+			const hay = [row.title, row.description, row.category, ...row.tags, row.text].join(' ').toLowerCase();
+			return terms.every((term) => hay.includes(term));
+		});
+		count.textContent = found.length ? `글 ${found.length}개` : '찾는 글이 없습니다.';
+		results.innerHTML = found
+			.map((row) => {
+				// 본문에서 찾은 자리 앞뒤를 조금 보여 준다. 본문에 없으면 요약을 쓴다.
+				const at = row.text.toLowerCase().indexOf(terms[0]);
+				const snippet = at < 0 ? row.description : (at > 30 ? '…' : '') + row.text.slice(Math.max(0, at - 30), at + 90) + '…';
+				return `<li><a class="item text-only" href="/blog/${esc(row.slug)}/"><div class="tx">
+					<span class="cat">${esc(row.category)}</span><h3>${esc(row.title)}</h3><p class="desc">${esc(snippet)}</p>
+					<p class="meta"><span>${esc(row.date.replaceAll('-', '. '))}</span>${row.tags.map((tag) => `<i></i><span>#${esc(tag)}</span>`).join('')}</p>
+				</div></a></li>`;
+			})
+			.join('');
+	}
+
+	input.value = new URLSearchParams(location.search).get('q') ?? '';
+	input.addEventListener('input', render);
+	render();
+</script>

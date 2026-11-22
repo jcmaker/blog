@@ -37,7 +37,7 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
 			<a class="cat" href={`/category/${category}/`}>{category}</a>
 			<h1>{title}</h1>
 			<p class="when">
-				<FormattedDate date={pubDate} /> · 읽는 데 {readingMinutes(post)}분
+				<FormattedDate date={pubDate} /> · 읽는 데 {readingMinutes(post)}분<span data-views={post.id} data-count data-prefix=" · " hidden />
 				{updatedDate && <> · 수정 <FormattedDate date={updatedDate} /></>}
 			</p>
 		</div>
