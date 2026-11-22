@@ -1,24 +1,21 @@
 ---
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
+import { thumbnail } from '../art';
 
+// 글의 썸네일. heroImage가 있으면 그 그림을, 없으면 글 주소로 정해지는 "쌓기" 그림을 쓴다.
 interface Props {
 	post: CollectionEntry<'blog'>;
 	class?: string;
 }
 
 const { post, class: extra } = Astro.props;
-const GLYPHS = ['</>', '{ }', ';', '::', '$_', '=>', '~/', '[ ]'];
-// 글 주소로 무늬를 고른다. 같은 글은 언제나 같은 썸네일이 나온다.
-const n = [...post.id].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
 ---
 
 {
 	post.data.heroImage ? (
 		<Image class:list={['th', extra]} src={post.data.heroImage} width={720} height={480} alt="" />
 	) : (
-		<div class:list={['th', `t${n % 5}`, extra]} aria-hidden="true">
-			<b>{GLYPHS[n % GLYPHS.length]}</b>
-		</div>
+		<svg class:list={['th', extra]} viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true" set:html={thumbnail(post.id)} />
 	)
 }

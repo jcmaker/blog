@@ -25,6 +25,7 @@
 	--c3: oklch(0.7212 0.1276 264.1059);
 	--c4: oklch(0.8122 0.0844 262.9727);
 	--c5: oklch(0.9231 0.028 263.4295);
+	--navy: oklch(0.2077 0.0398 265.7549);
 	--sky: #4fb4f5;
 	--brand: linear-gradient(90deg, #4fb4f5, #3350c0);
 	--radius: 8px;
@@ -167,14 +168,24 @@ img {
 	overflow: hidden;
 	background-color: var(--hero);
 	color: var(--hero-fg);
-	background-image:
-		linear-gradient(color-mix(in oklab, var(--hero-line) 55%, transparent) 1px, transparent 1px),
-		linear-gradient(90deg, color-mix(in oklab, var(--hero-line) 55%, transparent) 1px, transparent 1px);
-	background-size: 96px 96px;
-	background-position: -1px -1px;
+}
+/* 배너 그림(src/art.ts) 위에 왼쪽이 짙은 막을 덮어 제목이 읽히게 한다 */
+.hero .banner {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+.hero::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(180deg, color-mix(in oklab, var(--hero) 88%, transparent), color-mix(in oklab, var(--hero) 62%, transparent));
+	pointer-events: none;
 }
 .hero .in {
 	position: relative;
+	z-index: 1;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
 	gap: 24px;
@@ -193,37 +204,6 @@ img {
 .hero p {
 	margin: 12px 0 0;
 	color: var(--hero-sub);
-}
-.glyphs {
-	display: none;
-	grid-template-columns: repeat(4, 96px);
-	grid-auto-rows: 96px;
-	font-family: var(--font-jetbrains-mono);
-	font-weight: 600;
-	font-size: 26px;
-}
-.glyphs span {
-	display: grid;
-	place-items: center;
-	animation: rise 0.6s var(--ease) both;
-}
-.glyphs span:nth-child(odd) {
-	animation-delay: 0.08s;
-}
-.glyphs span:nth-child(3n) {
-	animation-delay: 0.16s;
-}
-.g-sky {
-	color: var(--sky);
-}
-.g-c3 {
-	color: var(--c3);
-}
-.g-c4 {
-	color: var(--c4);
-}
-.g-dim {
-	color: var(--hero-line);
 }
 .main {
 	flex: 1;
@@ -268,51 +248,14 @@ img {
 	font-weight: 400;
 }
 
-/* ── 썸네일: heroImage가 없으면 무늬와 기호로 대신한다 ── */
+/* ── 썸네일: Thumb.astro가 그린다 ── */
 .th {
-	position: relative;
-	overflow: hidden;
-	display: grid;
-	place-items: center;
+	display: block;
 	width: 100%;
+	height: auto;
 	aspect-ratio: 3 / 2;
 	object-fit: cover;
 	border-radius: 12px;
-	font-family: var(--font-jetbrains-mono);
-	font-weight: 600;
-	font-size: 34px;
-}
-.th b {
-	font-weight: 600;
-	transition: transform 0.5s var(--ease);
-}
-div.th::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background-image: linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px);
-	background-size: 32px 32px;
-	opacity: 0.12;
-}
-.t0 {
-	background: linear-gradient(135deg, var(--c1), var(--c2));
-	color: #fff;
-}
-.t1 {
-	background: var(--c5);
-	color: var(--c1);
-}
-.t2 {
-	background: var(--brand);
-	color: #fff;
-}
-.t3 {
-	background: oklch(0.2077 0.0398 265.7549);
-	color: var(--sky);
-}
-.t4 {
-	background: linear-gradient(135deg, var(--c3), var(--c4));
-	color: oklch(0.2077 0.0398 265.7549);
 }
 
 /* ── 홈: 최근 올라온 글 (좁은 화면에서는 옆으로 넘긴다) ── */
@@ -335,10 +278,6 @@ div.th::before {
 .cardp:active,
 .item:active {
 	transform: scale(0.985);
-}
-.cardp:hover .th b,
-.item:hover .th b {
-	transform: scale(1.12);
 }
 .cardp:hover h3,
 .item:hover h3 {
@@ -403,7 +342,6 @@ div.th::before {
 	grid-column: 2;
 	grid-row: 1;
 	border-radius: 10px;
-	font-size: 22px;
 }
 .item .tx {
 	grid-column: 1;
@@ -469,7 +407,6 @@ div.th::before {
 	aspect-ratio: auto;
 	border-radius: 0;
 	opacity: 0.3;
-	font-size: 180px;
 }
 .ph .cat {
 	color: var(--sky);
@@ -683,6 +620,9 @@ div.th::before {
 }
 
 @media (min-width: 720px) {
+	.hero::after {
+		background: linear-gradient(90deg, var(--hero) 0%, color-mix(in oklab, var(--hero) 85%, transparent) 38%, transparent 62%);
+	}
 	.in {
 		padding-inline: 32px;
 	}
@@ -696,9 +636,6 @@ div.th::before {
 	}
 	.hero p {
 		font-size: 16.5px;
-	}
-	.glyphs {
-		display: grid;
 	}
 	.ph .in {
 		min-height: 0;
@@ -732,7 +669,6 @@ div.th::before {
 	.item .th {
 		grid-column: 1;
 		border-radius: 12px;
-		font-size: 30px;
 	}
 	.item .tx {
 		grid-column: 2;

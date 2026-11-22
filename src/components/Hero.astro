@@ -1,4 +1,6 @@
 ---
+import { banner } from '../art';
+
 // 목록 페이지 위쪽의 어두운 머리 영역. 제목은 slot으로 받는다.
 interface Props {
 	sub: string;
@@ -8,20 +10,11 @@ const { sub } = Astro.props;
 ---
 
 <section class="hero">
+	<svg class="banner" viewBox="0 0 1180 300" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" set:html={banner} />
 	<div class="in">
 		<div>
 			<h1><slot /></h1>
 			<p>{sub}</p>
-		</div>
-		<div class="glyphs" aria-hidden="true">
-			<span class="g-sky">{'</>'}</span>
-			<span class="g-c3">;</span>
-			<span class="g-c4">::</span>
-			<span class="g-dim">[ ]</span>
-			<span class="g-c4">$_</span>
-			<span class="g-dim">{'{ }'}</span>
-			<span class="g-c3">{'=>'}</span>
-			<span class="g-sky">~/</span>
 		</div>
 	</div>
 </section>

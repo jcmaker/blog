@@ -2,6 +2,7 @@
 import { type CollectionEntry, render } from 'astro:content';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Thumb from '../../components/Thumb.astro';
+import { banner } from '../../art';
 import { SITE_TITLE } from '../../consts';
 import Base from '../../layouts/Base.astro';
 import { getPosts, readingMinutes } from '../../posts';
@@ -25,7 +26,13 @@ const toc = headings.filter((heading) => heading.depth === 2 || heading.depth ==
 
 <Base title={`${title} | ${SITE_TITLE}`} description={description} image={heroImage} category={category}>
 	<section class="hero ph">
-		<Thumb post={post} class="art" />
+		{
+			heroImage ? (
+				<Thumb post={post} class="art" />
+			) : (
+				<svg class="banner" viewBox="0 0 1180 300" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" set:html={banner} />
+			)
+		}
 		<div class="in">
 			<a class="cat" href={`/category/${category}/`}>{category}</a>
 			<h1>{title}</h1>
