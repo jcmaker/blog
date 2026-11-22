@@ -8,6 +8,12 @@
 }
 html {
 	scroll-padding-top: 80px;
+	/* 화면 끝에서 더 당겼을 때 보이는 바깥 바탕. 머리줄·푸터와 같은 색이라 경계가 보이지 않는다. */
+	background: var(--hero);
+}
+/* 글쓰기 화면은 머리줄이 밝아서 본문 바탕색을 쓴다 */
+html:has(body.admin) {
+	background: var(--background);
 }
 body {
 	margin: 0;
