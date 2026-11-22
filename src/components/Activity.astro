@@ -1,6 +1,6 @@
 ---
 import { execSync } from 'node:child_process';
-import { getPosts } from '../posts';
+import { getPosts } from '../lib/posts';
 
 // 지난 1년의 블로그 활동을 하루 한 점으로 그린다(53주 × 7일, 맨 오른쪽 줄이 이번 주).
 // 활동 = 글 폴더(src/content/blog)를 건드린 커밋 수. 빌드할 때 git 기록에서 센다.

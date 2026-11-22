@@ -1,4 +1,4 @@
-import { getPosts } from '../posts';
+import { getPosts } from '../lib/posts';
 
 // 검색 페이지(/search/)가 받아 가는 글 목록. 빌드할 때 한 번 만들어진다.
 export async function GET() {

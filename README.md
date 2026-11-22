@@ -1,6 +1,24 @@
-# blog.justincho.dev
+# justinit
 
 Astro로 만든 개인 블로그. Cloudflare Pages에 배포한다 (`main`에 push하면 자동 배포).
+
+## 폴더 구조
+
+```
+src/
+  content/blog/   글. 글 하나가 폴더 하나 (index.md + 이미지)
+  pages/          주소가 되는 파일. admin.astro가 글쓰기 화면
+  components/     화면 조각 (머리줄, 글 목록, 썸네일, 활동 기록 …)
+  layouts/        모든 페이지의 공통 틀
+  lib/            공용 코드: 글 불러오기(posts), 그림(art), 글머리 읽기·쓰기(frontmatter)
+  styles/         tokens.css(색·모양 값)와 global.css(스타일)
+functions/        Cloudflare Pages Function. 지금은 조회수 하나
+public/           파비콘
+docs/             결정 기록(adr/)과 디자인 시스템 문서
+```
+
+- 왜 이렇게 만들었는지: [docs/adr](docs/adr/README.md)
+- 색, 글자, 구성 요소의 규칙: [docs/design-system.md](docs/design-system.md)
 
 ## 글 쓰기
 

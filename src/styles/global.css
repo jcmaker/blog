@@ -1,51 +1,7 @@
-/* 색·모서리·그림자는 QuestFlow(erp--quest-on/app/globals.css) 토큰을 옮긴 것이다.
-   배치: 어두운 머리 영역 → 본문(.main) → 어두운 푸터. 720px, 980px에서 넓은 화면 배치로 바뀐다. */
-:root {
-	/* 기본은 라이트. 머리줄의 버튼으로 바꾸면 <html data-theme="dark">가 된다. */
-	color-scheme: light;
-	--background: oklch(1 0 0);
-	--card: oklch(1 0 0);
-	--input: oklch(0.8688 0.0198 252.894);
-	--destructive: oklch(0.6368 0.2078 25.3313);
-	--foreground: oklch(0.2077 0.0398 265.7549);
-	--muted: oklch(0.9683 0.0069 247.8956);
-	--muted-foreground: oklch(0.5544 0.0407 257.4166);
-	--border: oklch(0.9288 0.0126 255.5078);
-	--primary-text: oklch(0.4026 0.1374 261.393);
-	--warn: oklch(0.52 0.13 60);
-	--warn-soft: oklch(0.95 0.05 85);
-	/* 머리 영역·푸터·코드: 테마와 상관없이 어둡다 */
-	--hero: oklch(0.2077 0.0398 265.7549);
-	--hero-fg: oklch(0.9842 0.0034 247.8575);
-	--hero-sub: oklch(0.7107 0.0351 256.7878);
-	--hero-line: oklch(0.3717 0.0392 257.287);
-	/* 자동 썸네일 */
-	--c1: oklch(0.4026 0.1374 261.393);
-	--c2: oklch(0.5598 0.1882 266.3996);
-	--c3: oklch(0.7212 0.1276 264.1059);
-	--c4: oklch(0.8122 0.0844 262.9727);
-	--c5: oklch(0.9231 0.028 263.4295);
-	--navy: oklch(0.2077 0.0398 265.7549);
-	--sky: #4fb4f5;
-	--brand: linear-gradient(90deg, #4fb4f5, #3350c0);
-	--radius: 8px;
-	--ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-:root[data-theme='dark'] {
-	color-scheme: dark;
-	--background: oklch(0.2077 0.0398 265.7549);
-	--foreground: oklch(0.9842 0.0034 247.8575);
-	--card: oklch(0.2795 0.0368 260.031);
-	--muted: oklch(0.2795 0.0368 260.031);
-	--muted-foreground: oklch(0.7107 0.0351 256.7878);
-	--border: oklch(0.3717 0.0392 257.287);
-	--input: oklch(0.3717 0.0392 257.287);
-	--primary-text: oklch(0.809 0.105 251.8);
-	--destructive: oklch(0.72 0.17 25);
-	--warn: oklch(0.82 0.12 80);
-	--warn-soft: oklch(0.32 0.05 80);
-	--hero: oklch(0.16 0.035 266);
-}
+/* 사이트 전체 스타일. 값(색·모서리·글꼴)은 tokens.css에 있고 여기서는 그 이름만 쓴다.
+   배치: 어두운 머리 영역 → 본문(.main) → 어두운 푸터. 720px, 980px에서 넓은 화면 배치로 바뀐다.
+   규칙과 구성 요소 설명은 docs/design-system.md */
+@import './tokens.css';
 
 * {
 	box-sizing: border-box;
@@ -85,7 +41,7 @@ img {
 /* ── 공통: 머리줄, 머리 영역, 푸터 ── */
 .in {
 	width: 100%;
-	max-width: 1180px;
+	max-width: var(--page);
 	margin: 0 auto;
 	padding-inline: 20px;
 }
@@ -216,7 +172,7 @@ img {
 	background-color: var(--hero);
 	color: var(--hero-fg);
 }
-/* 배너 그림(src/art.ts) 위에 왼쪽이 짙은 막을 덮어 제목이 읽히게 한다 */
+/* 배너 그림(src/lib/art.ts) 위에 왼쪽이 짙은 막을 덮어 제목이 읽히게 한다 */
 .hero .banner {
 	position: absolute;
 	inset: 0;
@@ -302,7 +258,7 @@ img {
 	height: auto;
 	aspect-ratio: 3 / 2;
 	object-fit: cover;
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 }
 
 /* ── 홈: 최근 올라온 글 (좁은 화면에서는 옆으로 넘긴다) ── */
@@ -480,7 +436,7 @@ img {
 }
 .summary {
 	background: var(--muted);
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 	padding: 16px 20px;
 }
 .prose {
@@ -536,7 +492,7 @@ img {
 }
 .prose img {
 	display: block;
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 	border: 1px solid var(--border);
 }
 .prose blockquote {
@@ -609,7 +565,7 @@ img {
 }
 .around a {
 	border: 1px solid var(--border);
-	border-radius: 12px;
+	border-radius: var(--radius-lg);
 	padding: 16px 20px;
 	transition:
 		background 0.15s,
@@ -829,7 +785,7 @@ img {
 	}
 	.item .th {
 		grid-column: 1;
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 	}
 	.item .tx {
 		grid-column: 2;

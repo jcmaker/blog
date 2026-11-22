@@ -20,3 +20,9 @@ Consult these guides before working on related tasks:
 - [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
 - [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
 - [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+
+## Project docs
+
+- Decisions (ADR): `docs/adr/` — read the index before changing architecture; record a new ADR when a decision changes.
+- Design system: `docs/design-system.md` — use tokens from `src/styles/tokens.css`, never literal colors in components.
+- Folder structure: see `README.md`.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { onRequestGet, onRequestPost } from '../functions/api/views.js';
+import { onRequestGet, onRequestPost } from '../../functions/api/views.js';
 
 // D1을 흉내 낸다. 표를 만들기(exec) 전에는 실제 D1처럼 "no such table" 오류를 낸다.
 function fakeEnv() {

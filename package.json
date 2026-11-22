@@ -9,7 +9,7 @@
     "dev": "astro dev",
     "build": "(git fetch --unshallow 2>/dev/null || true) && astro build",
     "preview": "astro preview",
-    "test": "node --test src/frontmatter.test.ts src/views.test.js",
+    "test": "node --test src/lib/frontmatter.test.ts src/lib/views.test.js",
     "astro": "astro"
   },
   "dependencies": {

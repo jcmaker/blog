@@ -1,0 +1,62 @@
+/* 디자인 토큰: 사이트에서 쓰는 색·모서리·글꼴·움직임 값의 유일한 정의.
+   색은 QuestFlow(erp--quest-on/app/globals.css)의 라이트/다크 값을 옮긴 것이다.
+   기본은 라이트이고, 머리줄의 버튼을 누르면 <html data-theme="dark">가 되어 아래 다크 값으로 바뀐다.
+   새 색이 필요하면 구성 요소에 직접 적지 말고 여기에 이름을 붙여 추가한다. 설명은 docs/design-system.md */
+:root {
+	color-scheme: light;
+
+	/* 면과 글자 */
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.2077 0.0398 265.7549);
+	--card: oklch(1 0 0);
+	--muted: oklch(0.9683 0.0069 247.8956);
+	--muted-foreground: oklch(0.5544 0.0407 257.4166);
+	--border: oklch(0.9288 0.0126 255.5078);
+	--input: oklch(0.8688 0.0198 252.894);
+
+	/* 강조와 상태 */
+	--primary-text: oklch(0.4026 0.1374 261.393);
+	--destructive: oklch(0.6368 0.2078 25.3313);
+	--warn: oklch(0.52 0.13 60);
+	--warn-soft: oklch(0.95 0.05 85);
+
+	/* 머리 영역·푸터·코드 블록: 테마와 상관없이 어둡다 */
+	--hero: oklch(0.2077 0.0398 265.7549);
+	--hero-fg: oklch(0.9842 0.0034 247.8575);
+	--hero-sub: oklch(0.7107 0.0351 256.7878);
+	--hero-line: oklch(0.3717 0.0392 257.287);
+
+	/* 브랜드 색: 테마가 바뀌어도 그대로다. 배너·썸네일·버튼·활동 기록에 쓴다 */
+	--c1: oklch(0.4026 0.1374 261.393);
+	--c2: oklch(0.5598 0.1882 266.3996);
+	--c3: oklch(0.7212 0.1276 264.1059);
+	--c4: oklch(0.8122 0.0844 262.9727);
+	--c5: oklch(0.9231 0.028 263.4295);
+	--navy: oklch(0.2077 0.0398 265.7549);
+	--sky: #4fb4f5;
+	--brand: linear-gradient(90deg, #4fb4f5, #3350c0);
+
+	/* 모양과 움직임 */
+	--radius: 8px; /* 버튼, 입력란, 코드 블록 */
+	--radius-lg: 12px; /* 카드, 썸네일, 상자 */
+	--page: 1180px; /* 본문 최대 너비 */
+	--ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+	/* 글꼴은 astro.config.mjs에서 불러온다: --font-inter(본문), --font-jetbrains-mono(코드) */
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--background: oklch(0.2077 0.0398 265.7549);
+	--foreground: oklch(0.9842 0.0034 247.8575);
+	--card: oklch(0.2795 0.0368 260.031);
+	--muted: oklch(0.2795 0.0368 260.031);
+	--muted-foreground: oklch(0.7107 0.0351 256.7878);
+	--border: oklch(0.3717 0.0392 257.287);
+	--input: oklch(0.3717 0.0392 257.287);
+	--primary-text: oklch(0.809 0.105 251.8);
+	--destructive: oklch(0.72 0.17 25);
+	--warn: oklch(0.82 0.12 80);
+	--warn-soft: oklch(0.32 0.05 80);
+	--hero: oklch(0.16 0.035 266);
+}

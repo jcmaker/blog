@@ -1,9 +1,9 @@
 ---
 import Hero from '../../components/Hero.astro';
 import PostList from '../../components/PostList.astro';
-import { SITE_TITLE } from '../../consts';
+import { SITE_TITLE } from '../../lib/consts';
 import Base from '../../layouts/Base.astro';
-import { getPosts } from '../../posts';
+import { getPosts } from '../../lib/posts';
 
 export async function getStaticPaths() {
 	const posts = await getPosts();

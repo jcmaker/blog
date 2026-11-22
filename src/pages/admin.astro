@@ -114,8 +114,8 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 
 <script>
 	import { marked } from 'marked';
-	import { THUMB_COUNT, thumbnail } from '../art';
-	import { parsePost, serializePost } from '../frontmatter';
+	import { THUMB_COUNT, thumbnail } from '../lib/art';
+	import { parsePost, serializePost } from '../lib/frontmatter';
 
 	const REPO = 'jcmaker/blog';
 	const BRANCH = 'main';
@@ -463,7 +463,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		padding: 28px 24px;
 		background: var(--card);
 		border: 1px solid var(--border);
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 	}
 	.login h1 {
 		margin: 0;
@@ -486,7 +486,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		margin: 0;
 		padding: 0;
 		border: 1px solid var(--border);
-		border-radius: 12px;
+		border-radius: var(--radius-lg);
 		overflow: hidden;
 	}
 	.rows:empty {

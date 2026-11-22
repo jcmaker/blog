@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
-import { thumbnail } from '../art';
+import { thumbnail } from '../lib/art';
 
 // 글의 썸네일. heroImage가 있으면 그 그림을, 없으면 글머리의 thumb 번호나 글 주소로 정해지는 "쌓기" 그림을 쓴다.
 interface Props {

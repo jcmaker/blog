@@ -4,9 +4,9 @@ import FormattedDate from '../components/FormattedDate.astro';
 import Hero from '../components/Hero.astro';
 import PostList from '../components/PostList.astro';
 import Thumb from '../components/Thumb.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../lib/consts';
 import Base from '../layouts/Base.astro';
-import { getPosts } from '../posts';
+import { getPosts } from '../lib/posts';
 
 const posts = await getPosts();
 // 글이 세 개가 되기 전에는 같은 글이 위아래로 겹쳐 보이므로 "최근 올라온 글"을 숨긴다.
