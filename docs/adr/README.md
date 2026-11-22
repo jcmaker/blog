@@ -34,3 +34,4 @@
 | [0013](0013-activity-blog-only.md) | 활동 기록은 블로그 활동만 센다 | 채택 |
 | [0014](0014-no-comments.md) | 댓글은 만들지 않는다 | 채택 |
 | [0015](0015-structure-and-design-system.md) | 개인 프로젝트여도 폴더 구조와 디자인 시스템을 갖춘다 | 채택 |
+| [0016](0016-iso-banner-gathering-thumbnails.md) | 배너는 입체 블록, 썸네일은 모이는 조각으로 그린다 | 채택 |

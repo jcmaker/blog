@@ -141,6 +141,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 	let dirty = false;
 	// 고른 썸네일 번호. null이면 자동.
 	let thumbPick: number | null = null;
+	let thumbShown = ''; // 지금 그려져 있는 썸네일 고르기의 주소와 선택
 
 	// ── GitHub ──
 	async function gh(path: string, init?: RequestInit) {
@@ -282,12 +283,15 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		$('slugHint').textContent = `blog.justincho.dev/blog/${slug || '…'}/`;
 		$('saveBtn').textContent = $('fDraft').checked ? '초안으로 저장' : '발행';
 		// 썸네일 고르기: 맨 앞이 자동(지금 주소로 정해지는 그림), 뒤로 1번부터.
-		$('thumbPick').innerHTML = [null, ...Array.from({ length: THUMB_COUNT }, (_, i) => i + 1)]
+		if (thumbShown !== `${slug}|${thumbPick}`) {
+			thumbShown = `${slug}|${thumbPick}`;
+			$('thumbPick').innerHTML = [null, ...Array.from({ length: THUMB_COUNT }, (_, i) => i + 1)]
 			.map(
 				(pick) => `<button type="button" data-thumb="${pick ?? ''}" aria-pressed="${pick === thumbPick}" title="${pick ?? '자동'}">
 					<svg viewBox="0 0 300 200" aria-hidden="true">${thumbnail(slug, pick ?? undefined)}</svg><span>${pick ?? '자동'}</span></button>`,
 			)
 			.join('');
+		}
 		$('pvBody').innerHTML = marked.parse($('fBody').value, { async: false });
 		// 같은 폴더의 이미지(./그림.png)는 아직 올리지 않은 파일이거나 저장소에 있는 파일이다.
 		for (const img of $('pvBody').querySelectorAll('img')) {

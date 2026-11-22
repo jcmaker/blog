@@ -170,6 +170,10 @@ img {
 	position: relative;
 	overflow: hidden;
 	background-color: var(--hero);
+	/* 오른쪽 아래와 위쪽에 은은한 빛 */
+	background-image:
+		radial-gradient(55% 120% at 88% 105%, color-mix(in oklab, var(--sky) 20%, transparent), transparent 62%),
+		radial-gradient(45% 90% at 62% -10%, color-mix(in oklab, var(--c2) 30%, transparent), transparent 70%);
 	color: var(--hero-fg);
 }
 /* 배너 그림(src/lib/art.ts) 위에 왼쪽이 짙은 막을 덮어 제목이 읽히게 한다 */
@@ -185,6 +189,25 @@ img {
 	inset: 0;
 	background: linear-gradient(180deg, color-mix(in oklab, var(--hero) 88%, transparent), color-mix(in oklab, var(--hero) 62%, transparent));
 	pointer-events: none;
+}
+/* 배너의 블록: 처음에 차례로 내려앉고, 빛나는 꼭대기는 천천히 깜빡인다 */
+.art-in {
+	animation: art-in 0.7s var(--ease) both;
+	transform-box: fill-box;
+}
+@keyframes art-in {
+	from {
+		opacity: 0;
+		transform: translateY(-14px);
+	}
+}
+.art-lit {
+	animation: art-lit 3.2s ease-in-out infinite;
+}
+@keyframes art-lit {
+	50% {
+		opacity: 0.55;
+	}
 }
 .hero .in {
 	position: relative;
