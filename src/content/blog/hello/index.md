@@ -1,5 +1,6 @@
 ---
 title: '블로그를 시작합니다'
+slug: hello
 description: '이 블로그에 무엇을 쓸지, 어떻게 만들었는지.'
 pubDate: 2026-11-22
 category: tech
