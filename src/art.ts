@@ -35,7 +35,7 @@ export function blocks(width: number, height: number, seed: number, ink: [string
 // 머리 영역 배너: 오른쪽으로 갈수록 높아진다.
 export const banner = blocks(1180, 300, 8, ['var(--sky)', 'var(--c3)'], { cell: 30, base: -0.25, rise: 1.15 });
 
-// 썸네일: 바탕색 다섯 가지 × 쌓인 모양 다섯 가지. 글 주소로 하나가 정해진다.
+// 썸네일: 바탕색 다섯 가지 × 쌓인 모양 다섯 가지. 번호를 고르지 않으면 글 주소로 하나가 정해진다.
 const SKINS: { bg: string; ink: [string, string] }[] = [
 	{ bg: 'var(--navy)', ink: ['var(--sky)', 'var(--c3)'] },
 	{ bg: 'var(--c5)', ink: ['var(--c1)', 'var(--c3)'] },
@@ -51,8 +51,12 @@ const SHAPES: Shape[] = [
 	{ cell: 30, base: 0.05, rise: 0.9 },
 ];
 
-export function thumbnail(slug: string) {
-	const n = [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+/** 고를 수 있는 썸네일 수. 글머리의 thumb: 1 ~ THUMB_COUNT */
+export const THUMB_COUNT = SKINS.length * SHAPES.length;
+
+/** pick(글머리의 thumb)이 있으면 그 번호의 그림, 없으면 글 주소로 정해지는 그림. */
+export function thumbnail(slug: string, pick?: number) {
+	const n = pick ? pick - 1 : [...slug].reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
 	const skin = SKINS[n % SKINS.length];
 	const shape = SHAPES[Math.floor(n / SKINS.length) % SHAPES.length];
 	return (

@@ -3,7 +3,7 @@ import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import { thumbnail } from '../art';
 
-// 글의 썸네일. heroImage가 있으면 그 그림을, 없으면 글 주소로 정해지는 "쌓기" 그림을 쓴다.
+// 글의 썸네일. heroImage가 있으면 그 그림을, 없으면 글머리의 thumb 번호나 글 주소로 정해지는 "쌓기" 그림을 쓴다.
 interface Props {
 	post: CollectionEntry<'blog'>;
 	class?: string;
@@ -16,6 +16,6 @@ const { post, class: extra } = Astro.props;
 	post.data.heroImage ? (
 		<Image class:list={['th', extra]} src={post.data.heroImage} width={720} height={480} alt="" />
 	) : (
-		<svg class:list={['th', extra]} viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true" set:html={thumbnail(post.id)} />
+		<svg class:list={['th', extra]} viewBox="0 0 300 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true" set:html={thumbnail(post.id, post.data.thumb)} />
 	)
 }

@@ -14,6 +14,8 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			// 썸네일 번호(1~25). 비우면 글 주소로 자동 배정된다. 그림은 src/art.ts
+			thumb: z.number().int().min(1).max(25).optional(),
 			// URL에 그대로 쓰이므로 영문 소문자로 적는다 (예: tech, life)
 			category: z.string().regex(/^[a-z0-9-]+$/).default('tech'),
 			tags: z.array(z.string()).default([]),

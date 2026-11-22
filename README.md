@@ -23,6 +23,7 @@ description: '목록과 검색 결과에 보이는 한 줄 요약'
 pubDate: 2026-11-22
 category: tech        # 영문 소문자. 새 값을 쓰면 카테고리 페이지가 생긴다
 tags: [astro]         # 선택
+thumb: 3              # 선택. 썸네일 번호 1~25. 비우면 자동
 draft: true           # 선택. true면 배포본에서 숨겨지고 개발 서버에서만 보인다
 ---
 ```

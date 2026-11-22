@@ -78,6 +78,11 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 						<label for="fTags">태그</label>
 						<input id="fTags" placeholder="쉼표로 구분: astro, cloudflare" />
 					</div>
+					<div class="field">
+						<span class="field-label" id="thumbLabel">썸네일</span>
+						<div class="thumb-pick" id="thumbPick" role="group" aria-labelledby="thumbLabel"></div>
+						<small>"자동"은 글 주소로 정해지는 그림입니다. 대표 이미지(heroImage)가 있는 글은 그 그림이 대신 쓰입니다.</small>
+					</div>
 					<label class="switch">
 						<span>초안 (켜면 블로그에 안 보임)</span>
 						<input id="fDraft" type="checkbox" />
@@ -109,6 +114,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 
 <script>
 	import { marked } from 'marked';
+	import { THUMB_COUNT, thumbnail } from '../art';
 	import { parsePost, serializePost } from '../frontmatter';
 
 	const REPO = 'jcmaker/blog';
@@ -133,6 +139,8 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 	// 아직 올리지 않은 이미지: 파일 이름 → 파일, 미리보기 주소
 	const pending = new Map<string, { file: File; url: string }>();
 	let dirty = false;
+	// 고른 썸네일 번호. null이면 자동.
+	let thumbPick: number | null = null;
 
 	// ── GitHub ──
 	async function gh(path: string, init?: RequestInit) {
@@ -259,6 +267,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		$('fTags').value = Array.isArray(data.tags) ? data.tags.join(', ') : '';
 		$('fDraft').checked = post.slug === null ? true : data.draft === true;
 		$('fBody').value = body;
+		thumbPick = typeof data.thumb === 'number' ? data.thumb : null;
 		dirty = false;
 		show('editor');
 		sync();
@@ -272,6 +281,13 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		$('pvMeta').textContent = ($('fDate').value || '날짜 없음').replaceAll('-', '. ') + ($('fDraft').checked ? ' · 초안' : '');
 		$('slugHint').textContent = `blog.justincho.dev/blog/${slug || '…'}/`;
 		$('saveBtn').textContent = $('fDraft').checked ? '초안으로 저장' : '발행';
+		// 썸네일 고르기: 맨 앞이 자동(지금 주소로 정해지는 그림), 뒤로 1번부터.
+		$('thumbPick').innerHTML = [null, ...Array.from({ length: THUMB_COUNT }, (_, i) => i + 1)]
+			.map(
+				(pick) => `<button type="button" data-thumb="${pick ?? ''}" aria-pressed="${pick === thumbPick}" title="${pick ?? '자동'}">
+					<svg viewBox="0 0 300 200" aria-hidden="true">${thumbnail(slug, pick ?? undefined)}</svg><span>${pick ?? '자동'}</span></button>`,
+			)
+			.join('');
 		$('pvBody').innerHTML = marked.parse($('fBody').value, { async: false });
 		// 같은 폴더의 이미지(./그림.png)는 아직 올리지 않은 파일이거나 저장소에 있는 파일이다.
 		for (const img of $('pvBody').querySelectorAll('img')) {
@@ -281,6 +297,13 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 			img.src = pending.get(file)?.url ?? `${RAW}/${slug}/${file}`;
 		}
 	}
+	$('thumbPick').addEventListener('click', (event) => {
+		const button = (event.target as Element).closest<HTMLElement>('[data-thumb]');
+		if (!button) return;
+		thumbPick = button.dataset.thumb ? Number(button.dataset.thumb) : null;
+		dirty = true;
+		sync();
+	});
 	$('form').addEventListener('input', () => {
 		dirty = true;
 		sync();
@@ -338,6 +361,8 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		};
 		if (tags.length === 0) delete data.tags;
 		if (!data.draft) delete data.draft;
+		if (thumbPick) data.thumb = thumbPick;
+		else delete data.thumb;
 
 		const button = $<HTMLButtonElement>('saveBtn');
 		button.disabled = true;
@@ -543,6 +568,7 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		gap: 6px;
 	}
 	.field label,
+	.field-label,
 	.switch span {
 		font-size: 13.5px;
 		font-weight: 500;
@@ -580,6 +606,34 @@ import ThemeToggle from '../components/ThemeToggle.astro';
 		font-family: var(--font-jetbrains-mono);
 		font-size: 13.5px;
 		line-height: 1.7;
+	}
+	.thumb-pick {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+		gap: 8px;
+	}
+	.thumb-pick button {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 3px;
+		border: 2px solid transparent;
+		border-radius: 8px;
+		background: none;
+		font-size: 11.5px;
+		color: var(--muted-foreground);
+		cursor: pointer;
+	}
+	.thumb-pick svg {
+		display: block;
+		width: 100%;
+		height: auto;
+		border-radius: 5px;
+	}
+	.thumb-pick button[aria-pressed='true'] {
+		border-color: var(--primary-text);
+		color: var(--foreground);
+		font-weight: 600;
 	}
 	.pair {
 		display: grid;
